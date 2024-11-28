@@ -2,10 +2,13 @@ package com.food.ordering.system.order.service.domain.entity;
 
 import com.food.ordering.system.domain.entity.AggregateRoot;
 import com.food.ordering.system.domain.vo.*;
+import com.food.ordering.system.order.service.domain.exception.OrderDomainException;
+import com.food.ordering.system.order.service.domain.vo.OrderItemId;
 import com.food.ordering.system.order.service.domain.vo.StreetAddress;
 import com.food.ordering.system.order.service.domain.vo.TrackingId;
 
 import java.util.List;
+import java.util.UUID;
 
 public class Order extends AggregateRoot<OrderId> {
 
@@ -24,6 +27,44 @@ public class Order extends AggregateRoot<OrderId> {
     private OrderStatus orderStatus;
 
     private List<String> failureMessages;
+
+    public void initializeOrder() {
+        setId(new OrderId(UUID.randomUUID()));
+        trackingId = new TrackingId(UUID.randomUUID());
+        orderStatus = OrderStatus.PENDING;
+        initializeOrderItems();
+    }
+
+    public void validateOrder() {
+        validateInitialOrder();
+        validateTotalPrice();
+        validateItemPrice();
+    }
+
+    private void validateInitialOrder() {
+        if (orderStatus != null || getId() != null) {
+            throw new OrderDomainException("Order is not in correct status for initialization");
+        }
+    }
+
+    private void validateTotalPrice() {
+        if (price == null || !price.isGreaterThanZero()) {
+            throw new OrderDomainException("Price must be greater than zero");
+        }
+    }
+
+    private void validateItemPrice() {
+
+    }
+
+    private void initializeOrderItems() {
+        long itemId = 1;
+
+        for (OrderItem orderItem : items) {
+            orderItem.initializeOrderItem(super.getId(), new OrderItemId(itemId++));
+        }
+
+    }
 
     private Order(Builder builder) {
         super.setId(builder.orderId);
